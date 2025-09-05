@@ -15,6 +15,8 @@ import com.monish.insight.ui.navigation.BottomNavGraph
 import com.monish.insight.ui.theme.InSightTheme
 import com.monish.insight.ui.theme.ThemeViewModel
 
+// News App
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

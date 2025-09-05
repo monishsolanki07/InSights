@@ -18,7 +18,7 @@ class ThemeViewModel(application: Application) : AndroidViewModel(application) {
     private val dataStore = application.dataStore
     private val THEME_KEY = booleanPreferencesKey("dark_theme")
 
-    // Flow that observes theme mode
+
     val isDarkTheme: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[THEME_KEY] ?: true // ✅ default = dark mode
     }
