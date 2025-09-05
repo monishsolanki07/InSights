@@ -10,6 +10,9 @@ import com.monish.insight.ui.bookmarks.BookmarksScreen
 import com.monish.insight.ui.profile.ProfileScreen
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.padding
+import com.monish.insight.ui.home.HomeViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+
 
 
 @Composable
@@ -27,10 +30,13 @@ fun BottomNavGraph(
         composable("home") { HomeScreen() }
         composable("bookmarks") { BookmarksScreen() }
         composable("profile") {
+            val homeViewModel: HomeViewModel = viewModel()
             ProfileScreen(
                 isDarkTheme = isDarkTheme,
-                onThemeToggle = onThemeToggle
+                onThemeToggle = onThemeToggle,
+                homeViewModel = homeViewModel
             )
         }
+
     }
 }
