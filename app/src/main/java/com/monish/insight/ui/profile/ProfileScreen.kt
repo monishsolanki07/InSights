@@ -1,6 +1,5 @@
 package com.monish.insight.ui.profile
 
-import android.app.Activity
 import android.speech.tts.TextToSpeech
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -26,11 +25,15 @@ fun ProfileScreen(
     homeViewModel: HomeViewModel
 ) {
     val context = LocalContext.current
+
+    // TTS
     var tts by remember { mutableStateOf<TextToSpeech?>(null) }
     var isTtsReady by remember { mutableStateOf(false) }
+    var isSpeaking by remember { mutableStateOf(false) }
 
-    // Observe articles from HomeViewModel
-    val newsArticles = homeViewModel.articles.value
+    // Observe India (priority) and World news
+    val indiaArticles by homeViewModel.indiaArticles
+    val worldArticles by homeViewModel.worldArticles
 
     // TTS initialization
     LaunchedEffect(Unit) {
@@ -42,6 +45,7 @@ fun ProfileScreen(
         }
     }
 
+    // Dispose TTS when leaving screen
     DisposableEffect(Unit) {
         onDispose {
             tts?.stop()
@@ -50,8 +54,6 @@ fun ProfileScreen(
     }
 
     var showPopup by remember { mutableStateOf(false) }
-    var isSpeaking by remember { mutableStateOf(false) }
-    var pausedText by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -113,17 +115,16 @@ fun ProfileScreen(
 
                         Spacer(Modifier.height(8.dp))
 
-                        // Play / Pause buttons
+                        // Play / Pause / Close buttons
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
+                            // Play TTS
                             Button(onClick = {
                                 if (!isSpeaking) {
-                                    val topHeadlines = newsArticles
-                                        .take(5)
-                                        .mapIndexed { index, article ->
-                                            "News ${index + 1}: ${article.title ?: "Untitled"}"
-                                        }
+                                    val topHeadlines = indiaArticles.take(5).mapIndexed { index, article ->
+                                        "News ${index + 1}: ${article.title ?: "Untitled"}"
+                                    }
                                     val textToRead = buildString {
                                         append("Let's hear today's insights. ")
                                         append(topHeadlines.joinToString(". "))
@@ -135,6 +136,7 @@ fun ProfileScreen(
                                 Text("Play")
                             }
 
+                            // Pause / Stop
                             Button(onClick = {
                                 tts?.stop()
                                 isSpeaking = false
@@ -142,6 +144,7 @@ fun ProfileScreen(
                                 Text("Pause/Stop")
                             }
 
+                            // Close popup
                             Button(onClick = {
                                 showPopup = false
                                 tts?.stop()
