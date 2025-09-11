@@ -4,6 +4,7 @@ import android.speech.tts.TextToSpeech
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,6 +16,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.monish.insight.R
 import com.monish.insight.ui.home.HomeViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -25,17 +30,32 @@ fun ProfileScreen(
     homeViewModel: HomeViewModel
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
-    // TTS
+    // ---------- User Name Persistence ----------
+    val dataStore = remember { UserPreferences(context) }
+    var userName by remember { mutableStateOf<String?>(null) }
+    var nameInput by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        userName = dataStore.getUserName().first()
+    }
+
+    fun saveName(name: String) {
+        scope.launch {
+            dataStore.saveUserName(name)
+            userName = name
+        }
+    }
+
+    // ---------- TTS ----------
     var tts by remember { mutableStateOf<TextToSpeech?>(null) }
     var isTtsReady by remember { mutableStateOf(false) }
     var isSpeaking by remember { mutableStateOf(false) }
 
-    // Observe India (priority) and World news
-    val indiaArticles by homeViewModel.indiaArticles
     val worldArticles by homeViewModel.worldArticles
+    val sportsArticles by homeViewModel.sportsArticles
 
-    // TTS initialization
     LaunchedEffect(Unit) {
         tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
@@ -45,7 +65,6 @@ fun ProfileScreen(
         }
     }
 
-    // Dispose TTS when leaving screen
     DisposableEffect(Unit) {
         onDispose {
             tts?.stop()
@@ -54,15 +73,78 @@ fun ProfileScreen(
     }
 
     var showPopup by remember { mutableStateOf(false) }
+    var selectedCategory by remember { mutableStateOf("World") }
 
+    fun speakHeadlines(
+        scope: CoroutineScope,
+        category: String,
+        articles: List<String>
+    ) {
+        val intro = "Good day, I’m David from Insights. Here are today’s top headlines for $category."
+        val sentences = listOf(intro) + articles
+
+        scope.launch(Dispatchers.Main) {
+            isSpeaking = true
+            for ((i, sentence) in sentences.withIndex()) {
+                if (!isSpeaking) break
+                tts?.speak(sentence, TextToSpeech.QUEUE_FLUSH, null, "utt_$i")
+
+                var done = false
+                tts?.setOnUtteranceProgressListener(object :
+                    android.speech.tts.UtteranceProgressListener() {
+                    override fun onStart(utteranceId: String?) {}
+                    override fun onDone(utteranceId: String?) { done = true }
+                    override fun onError(utteranceId: String?) { done = true }
+                })
+                while (!done && isSpeaking) {
+                    kotlinx.coroutines.delay(100)
+                }
+            }
+            isSpeaking = false
+        }
+    }
+
+    // ---------- UI ----------
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Profile", style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(24.dp))
+        // Avatar + Name
+        Image(
+            painter = painterResource(id = R.drawable.ic_default),
+            contentDescription = "User Avatar",
+            modifier = Modifier
+                .size(100.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                .padding(12.dp)
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        if (userName.isNullOrEmpty()) {
+            OutlinedTextField(
+                value = nameInput,
+                onValueChange = { nameInput = it },
+                label = { Text("Enter your name") },
+                modifier = Modifier.fillMaxWidth(0.8f)
+            )
+            Spacer(Modifier.height(8.dp))
+            Button(onClick = {
+                if (nameInput.isNotBlank()) saveName(nameInput)
+            }) {
+                Text("Save Name")
+            }
+        } else {
+            Text(
+                text = "Hello, $userName 👋",
+                style = MaterialTheme.typography.headlineSmall
+            )
+        }
+
+        Spacer(Modifier.height(32.dp))
 
         // Theme toggle
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -76,82 +158,92 @@ fun ProfileScreen(
 
         Spacer(Modifier.height(32.dp))
 
-        // Button to show TTS popup
+        // World News Button
         Button(
-            onClick = { showPopup = true },
-            enabled = isTtsReady
+            onClick = { selectedCategory = "World"; showPopup = true },
+            enabled = isTtsReady,
+            modifier = Modifier.fillMaxWidth(0.8f)
         ) {
-            Text(if (isTtsReady) "Read Top 5 Headlines" else "Initializing...")
+            Text("Read World News")
         }
+        Spacer(Modifier.height(12.dp))
 
-        // Popup for TTS controls
-        if (showPopup) {
-            Box(
+        // Sports News Button
+        Button(
+            onClick = { selectedCategory = "Sports"; showPopup = true },
+            enabled = isTtsReady,
+            modifier = Modifier.fillMaxWidth(0.8f)
+        ) {
+            Text("Read Sports News")
+        }
+    }
+
+    // ---- Popup (same as before) ----
+    if (showPopup) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Card(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth(0.9f)
+                    .fillMaxHeight(0.6f)
+                    .clip(RoundedCornerShape(20.dp)),
+                elevation = CardDefaults.cardElevation(10.dp)
             ) {
-                Card(
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .fillMaxHeight(0.5f)
-                        .clip(RoundedCornerShape(16.dp)),
-                    elevation = CardDefaults.cardElevation(8.dp)
+                        .fillMaxSize()
+                        .padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.SpaceBetween
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_anchor),
+                        contentDescription = "Anchor",
+                        modifier = Modifier.size(160.dp)
+                    )
+
+                    Text(
+                        "Daily Insights - $selectedCategory",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(20.dp)
                     ) {
-                        // Speaker image
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_speaker),
-                            contentDescription = "Speaker",
-                            modifier = Modifier.size(80.dp)
-                        )
-
-                        Spacer(Modifier.height(8.dp))
-
-                        // Play / Pause / Close buttons
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            // Play TTS
-                            Button(onClick = {
-                                if (!isSpeaking) {
-                                    val topHeadlines = indiaArticles.take(5).mapIndexed { index, article ->
-                                        "News ${index + 1}: ${article.title ?: "Untitled"}"
-                                    }
-                                    val textToRead = buildString {
-                                        append("Let's hear today's insights. ")
-                                        append(topHeadlines.joinToString(". "))
-                                    }
-                                    tts?.speak(textToRead, TextToSpeech.QUEUE_FLUSH, null, "ttsId")
-                                    isSpeaking = true
+                        Button(onClick = {
+                            if (!isSpeaking) {
+                                val headlines = when (selectedCategory) {
+                                    "World" -> worldArticles
+                                    "Sports" -> sportsArticles
+                                    else -> emptyList()
+                                }.take(5).mapIndexed { i, article ->
+                                    "News ${i + 1}: ${article.title ?: "Untitled"}"
                                 }
-                            }) {
-                                Text("Play")
+                                speakHeadlines(scope, selectedCategory, headlines)
                             }
+                        }) {
+                            Text("Start")
+                        }
 
-                            // Pause / Stop
-                            Button(onClick = {
-                                tts?.stop()
-                                isSpeaking = false
-                            }) {
-                                Text("Pause/Stop")
-                            }
+                        Button(onClick = {
+                            tts?.stop()
+                            isSpeaking = false
+                        }) {
+                            Text("Stop")
+                        }
 
-                            // Close popup
-                            Button(onClick = {
-                                showPopup = false
-                                tts?.stop()
-                                isSpeaking = false
-                            }) {
-                                Text("Close")
-                            }
+                        Button(onClick = {
+                            showPopup = false
+                            tts?.stop()
+                            isSpeaking = false
+                        }) {
+                            Text("Close")
                         }
                     }
                 }

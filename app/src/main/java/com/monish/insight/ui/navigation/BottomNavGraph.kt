@@ -9,7 +9,6 @@ import com.monish.insight.ui.home.HomeScreen
 import com.monish.insight.ui.bookmarks.BookmarksScreen
 import com.monish.insight.ui.profile.ProfileScreen
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.padding
 import com.monish.insight.ui.home.HomeViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 

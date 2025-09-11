@@ -20,6 +20,7 @@ class BookmarksViewModel(application: Application) : AndroidViewModel(applicatio
 
     init {
         loadBookmarks()
+
     }
 
     private fun loadBookmarks() {

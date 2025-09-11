@@ -27,4 +27,14 @@ interface NewsApiService {
         @Query("category") category: String = "business",
         @Query("apiKey") apiKey: String
     ): NewsResponse
+
+    @GET("everything")
+    suspend fun getEverything(
+        @Query("q") q: String,
+        @Query("language") language: String = "en",
+        @Query("sortBy") sortBy: String = "publishedAt",
+        @Query("pageSize") pageSize: Int = 20,
+        @Query("apiKey") apiKey: String
+    ): NewsResponse
+
 }

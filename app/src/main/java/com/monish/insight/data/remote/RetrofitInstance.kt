@@ -23,7 +23,7 @@ object RetrofitInstance {
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(NewsApiService::class.java) // ✅ Correct place
+            .create(NewsApiService::class.java)
     }
 
 }

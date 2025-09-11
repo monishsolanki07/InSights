@@ -96,4 +96,20 @@ dependencies {
 
     implementation("io.coil-kt:coil-compose:2.4.0") // or compatible
 
+
+    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("io.coil-kt:coil-gif:2.4.0")
+
+    // Media3 ExoPlayer
+    implementation ("androidx.media3:media3-exoplayer:1.2.1")
+    implementation ("androidx.media3:media3-ui:1.2.1")
+
+// Compose
+    implementation ("androidx.compose.ui:ui:1.6.0")
+    implementation ("androidx.compose.material3:material3:1.2.0")
+    implementation ("androidx.compose.ui:ui-tooling-preview:1.6.0")
+    debugImplementation ("androidx.compose.ui:ui-tooling:1.6.0")
+
+
+
 }

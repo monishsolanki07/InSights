@@ -22,14 +22,26 @@ class NewsRepository(context: Context) {
         RetrofitInstance.api.getTopHeadlines(apiKey = apiKey)
 
     // 🇮🇳 India news
+    // 🇮🇳 India news (always general top news, no forced category!)
     suspend fun getIndiaTopHeadlines(apiKey: String) =
         IndiaRetrofitInstance.api.getIndiaTopNews(
             apiKey = apiKey,
             sourceCountry = "in",
-            language = "en",
-            category = "sports", // or "technology", "sports", "business"
-            query = null
+            language = "en"
         )
+
+    // 📰 Sports news (from World News API via "everything" endpoint)
+    suspend fun getCategoryNews(query: String, apiKey: String) =
+        RetrofitInstance.api.getEverything(
+            q = query,
+            language = "en",
+            sortBy = "publishedAt",
+            pageSize = 20,
+            apiKey = apiKey
+        )
+
+
+
 
 
 
