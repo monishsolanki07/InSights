@@ -1,6 +1,6 @@
 package com.monish.insight.ui.bookmarks
 
-import androidx.lifecycle.ViewModel
+
 import androidx.lifecycle.viewModelScope
 import com.monish.insight.data.local.BookmarkEntity
 import com.monish.insight.data.repository.NewsRepository
