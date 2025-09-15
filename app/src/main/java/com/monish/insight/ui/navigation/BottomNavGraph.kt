@@ -6,11 +6,14 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.monish.insight.ui.home.HomeScreen
+import com.monish.insight.ui.home.ArticleReelsScreen
+
 import com.monish.insight.ui.bookmarks.BookmarksScreen
 import com.monish.insight.ui.profile.ProfileScreen
 import androidx.compose.ui.Modifier
 import com.monish.insight.ui.home.HomeViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+
 
 
 
@@ -27,6 +30,7 @@ fun BottomNavGraph(
         modifier = modifier
     ) {
         composable("home") { HomeScreen() }
+        composable("articles") { ArticleReelsScreen() }
         composable("bookmarks") { BookmarksScreen() }
         composable("profile") {
             val homeViewModel: HomeViewModel = viewModel()

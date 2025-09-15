@@ -40,6 +40,9 @@ android {
     buildFeatures {
         compose = true
     }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.3" // match your compose version
+    }
 }
 
 dependencies {
@@ -110,6 +113,25 @@ dependencies {
     implementation ("androidx.compose.ui:ui-tooling-preview:1.6.0")
     debugImplementation ("androidx.compose.ui:ui-tooling:1.6.0")
 
+
+    // Compose + Material3
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
+    implementation("androidx.activity:activity-compose:1.8.0")
+    implementation("androidx.compose.material3:material3:1.2.0")
+// Coil for image loading
+    implementation("io.coil-kt:coil-compose:2.4.0")
+// Accompanist pager (vertical pager)
+    implementation("com.google.accompanist:accompanist-pager:0.30.1")
+    implementation("com.google.accompanist:accompanist-pager-indicators:0.30.1")
+// Kotlin coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+// Retrofit / OkHttp / Gson — you likely already have these in project:
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    implementation("com.google.accompanist:accompanist-pager:0.28.0")
+    implementation("com.google.accompanist:accompanist-pager-indicators:0.28.0")
 
 
 }
