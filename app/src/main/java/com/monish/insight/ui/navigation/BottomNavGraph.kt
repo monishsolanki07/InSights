@@ -26,9 +26,16 @@ fun BottomNavGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = "home",
+        startDestination = "home", // default start destination
         modifier = modifier
     ) {
+
+        /*
+        User taps BottomBarItem("articles") → navController.navigate("articles").
+        NavController looks into NavHost
+        → finds composable("articles")
+        → shows ArticleReelsScreen().
+         */
         composable("home") { HomeScreen() }
         composable("articles") { ArticleReelsScreen() }
         composable("bookmarks") { BookmarksScreen() }

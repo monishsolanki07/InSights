@@ -9,12 +9,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.Description
 
 
 @Composable
 fun BottomBar(navController: NavController) {
+    // for adding icons in bottom nav
     val items = listOf(
         BottomNavItem("Home", "home", Icons.Filled.Home),
         BottomNavItem("Articles", "articles", Icons.Filled.Description),
@@ -23,6 +23,10 @@ fun BottomBar(navController: NavController) {
     )
 
     NavigationBar {
+        /*
+            USING STACK :
+             -> a stack to store values , in the order previously visited screeen
+         */
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
 
@@ -31,8 +35,8 @@ fun BottomBar(navController: NavController) {
                 selected = currentRoute == item.route,
                 onClick = {
                     navController.navigate(item.route) {
-                        launchSingleTop = true
-                        restoreState = true
+                        launchSingleTop = true  // no duplicate screen
+                        restoreState = true  //restores previous UI state (scroll position, input)
                         popUpTo(navController.graph.startDestinationId) { saveState = true }
                     }
                 },
