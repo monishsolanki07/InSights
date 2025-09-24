@@ -15,7 +15,6 @@ import com.monish.insight.ui.home.HomeViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.monish.insight.ui.bookmarks.BookmarksViewModel
 
-
 @Composable
 fun BottomNavGraph(
     navController: NavHostController,
@@ -23,7 +22,7 @@ fun BottomNavGraph(
     onThemeToggle: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Create a single instance of BookmarksViewModel
+    // Single instance of BookmarksViewModel
     val bookmarksViewModel: BookmarksViewModel = viewModel()
 
     NavHost(
@@ -32,10 +31,18 @@ fun BottomNavGraph(
         modifier = modifier
     ) {
         composable("home") {
-            HomeScreen(bookmarksViewModel = bookmarksViewModel)
+            val homeViewModel: HomeViewModel = viewModel()
+            HomeScreen(
+                homeViewModel = homeViewModel,
+                bookmarksViewModel = bookmarksViewModel
+            )
         }
         composable("articles") {
-            ArticleReelsScreen(bookmarksViewModel = bookmarksViewModel)
+            val homeViewModel: HomeViewModel = viewModel()
+            ArticleReelsScreen(
+                homeViewModel = homeViewModel,
+                bookmarksViewModel = bookmarksViewModel
+            )
         }
         composable("bookmarks") {
             BookmarksScreen(viewModel = bookmarksViewModel)
