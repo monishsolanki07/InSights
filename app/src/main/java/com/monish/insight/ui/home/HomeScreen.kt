@@ -31,7 +31,7 @@ fun HomeScreen(
             LocalContext.current.applicationContext as Application
         )
     ),
-    bookmarksViewModel: BookmarksViewModel = viewModel()
+    bookmarksViewModel: BookmarksViewModel
 ) {
     val indiaArticles by homeViewModel.indiaArticles
     val worldArticles by homeViewModel.worldArticles

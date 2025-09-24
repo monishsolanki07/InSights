@@ -13,8 +13,7 @@ import com.monish.insight.ui.profile.ProfileScreen
 import androidx.compose.ui.Modifier
 import com.monish.insight.ui.home.HomeViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-
-
+import com.monish.insight.ui.bookmarks.BookmarksViewModel
 
 
 @Composable
@@ -24,21 +23,23 @@ fun BottomNavGraph(
     onThemeToggle: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Create a single instance of BookmarksViewModel
+    val bookmarksViewModel: BookmarksViewModel = viewModel()
+
     NavHost(
         navController = navController,
-        startDestination = "home", // default start destination
+        startDestination = "home",
         modifier = modifier
     ) {
-
-        /*
-        User taps BottomBarItem("articles") → navController.navigate("articles").
-        NavController looks into NavHost
-        → finds composable("articles")
-        → shows ArticleReelsScreen().
-         */
-        composable("home") { HomeScreen() }
-        composable("articles") { ArticleReelsScreen() }
-        composable("bookmarks") { BookmarksScreen() }
+        composable("home") {
+            HomeScreen(bookmarksViewModel = bookmarksViewModel)
+        }
+        composable("articles") {
+            ArticleReelsScreen(bookmarksViewModel = bookmarksViewModel)
+        }
+        composable("bookmarks") {
+            BookmarksScreen(viewModel = bookmarksViewModel)
+        }
         composable("profile") {
             val homeViewModel: HomeViewModel = viewModel()
             ProfileScreen(
@@ -47,6 +48,5 @@ fun BottomNavGraph(
                 homeViewModel = homeViewModel
             )
         }
-
     }
 }

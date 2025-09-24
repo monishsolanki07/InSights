@@ -10,6 +10,7 @@ import com.monish.insight.data.local.BookmarkEntity
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 
 
 @Composable
@@ -44,6 +45,17 @@ fun BookmarkItem(bookmark: BookmarkEntity, onDeleteClick: () -> Unit) {
             .padding(6.dp),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
+        if (!bookmark.urlToImage.isNullOrBlank()) {
+            AsyncImage(
+                model = bookmark.urlToImage,
+                contentDescription = bookmark.title,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
                 text = bookmark.title ?: "No Title",

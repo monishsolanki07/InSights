@@ -19,12 +19,14 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.google.accompanist.pager.*
 import com.monish.insight.data.model.Article
+import com.monish.insight.ui.bookmarks.BookmarksViewModel
 import kotlinx.coroutines.delay
 
 // ✅ Infinite circular pager for articles
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun ArticleReelsScreen(homeViewModel: HomeViewModel = viewModel()) {
+fun ArticleReelsScreen(homeViewModel: HomeViewModel = viewModel(),
+                       bookmarksViewModel: BookmarksViewModel) {
     val context = LocalContext.current
 
     val world by homeViewModel.worldArticles
