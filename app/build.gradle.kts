@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-
     id("org.jetbrains.kotlin.kapt")
 }
 
@@ -134,6 +133,8 @@ dependencies {
     implementation("com.google.accompanist:accompanist-pager-indicators:0.28.0")
 
     implementation("androidx.compose.material3:material3:1.2.1")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
 
 
 }

@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import kotlinx.coroutines.flow.*
+
 
 class BookmarksViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -22,6 +24,15 @@ class BookmarksViewModel(application: Application) : AndroidViewModel(applicatio
         loadBookmarks()
 
     }
+
+    val bookmarkedUrls: StateFlow<Set<String>> = _allBookmarks.map { bookmarks ->
+        bookmarks.mapNotNull { it.url }.toSet()
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Lazily,
+        initialValue = emptySet()
+    )
+
 
     private fun loadBookmarks() {
         viewModelScope.launch {

@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.monish.insight.ui.home.HomeScreen
 import com.monish.insight.ui.home.ArticleReelsScreen
+import com.monish.insight.ui.reels.ReelScreen
 
 import com.monish.insight.ui.bookmarks.BookmarksScreen
 import com.monish.insight.ui.profile.ProfileScreen
@@ -55,5 +56,10 @@ fun BottomNavGraph(
                 homeViewModel = homeViewModel
             )
         }
+        composable("reels") {
+            ReelScreen(bookmarksViewModel = bookmarksViewModel)
+        }
+
+
     }
 }

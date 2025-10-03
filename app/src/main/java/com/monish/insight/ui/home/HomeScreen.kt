@@ -1,8 +1,8 @@
 package com.monish.insight.ui.home
 
 import android.app.Application
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,7 +10,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -21,7 +24,11 @@ import com.monish.insight.data.local.BookmarkEntity
 import com.monish.insight.ui.bookmarks.BookmarksViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.res.painterResource
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.draw.scale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,13 +45,12 @@ fun HomeScreen(
     val sportsArticles by homeViewModel.sportsArticles
     val isLoading by homeViewModel.isLoading
 
-    // 🌍 Default tab is World News
     var selectedTab by remember { mutableStateOf(1) }
     val tabs = listOf("India News", "World News", "Sports")
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("InSight") })
+            TopAppBar(title = { Text("INSIGHTS") }) // Consistent heading, uppercase for brand feel
         }
     ) { paddingValues ->
         Column(
@@ -52,7 +58,6 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Tabs
             TabRow(selectedTabIndex = selectedTab) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
@@ -65,76 +70,69 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            when {
-                isLoading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+            val articlesToShow = when (selectedTab) {
+                0 -> indiaArticles
+                1 -> worldArticles
+                2 -> sportsArticles
+                else -> worldArticles
+            }.take(10)
+
+            val context = LocalContext.current
+            LaunchedEffect(articlesToShow) {
+                withContext(Dispatchers.IO) {
+                    val imageLoader = coil.ImageLoader(context)
+                    articlesToShow.mapNotNull { it.urlToImage }.forEach { url ->
+                        try {
+                            val request = ImageRequest.Builder(context)
+                                .data(url)
+                                .size(800)
+                                .build()
+                            imageLoader.enqueue(request)
+                        } catch (_: Exception) {}
                     }
                 }
-                else -> {
-                    val articlesToShow = when (selectedTab) {
-                        0 ->  indiaArticles  // default
-                        1 ->  worldArticles
-                        2 -> sportsArticles
-                        else -> worldArticles
+            }
+
+            if (isLoading) {
+                // Shimmer placeholder list while loading
+                ShimmerArticleList()
+            } else {
+                if (articlesToShow.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No news available", style = MaterialTheme.typography.bodyMedium)
                     }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(bottom = 16.dp)
+                    ) {
+                        items(articlesToShow) { article ->
+                            ArticleItem(
+                                title = article.title ?: "No Title",
+                                description = article.description ?: "No Description",
+                                imageUrl = article.urlToImage,
+                                onBookmarkClick = {
+                                    val brief = article.description
+                                        ?.take(150)
+                                        ?.plus("...")
+                                        ?: "No description available"
 
-
-                    val limitedArticles = articlesToShow.take(10)
-
-                    // Prefetch images off main thread
-                    val context = LocalContext.current
-                    LaunchedEffect(limitedArticles) {
-                        withContext(Dispatchers.IO) {
-                            val imageLoader = coil.ImageLoader(context)
-                            limitedArticles.mapNotNull { it.urlToImage }.forEach { url ->
-                                try {
-                                    val request = ImageRequest.Builder(context)
-                                        .data(url)
-                                        .size(800)
-                                        .build()
-                                    imageLoader.enqueue(request)
-                                } catch (_: Exception) {
-                                    // ignore errors
+                                    val bookmark = BookmarkEntity(
+                                        title = article.title,
+                                        description = brief,
+                                        url = article.url,
+                                        urlToImage = article.urlToImage,
+                                        publishedAt = article.publishedAt
+                                    )
+                                    bookmarksViewModel.toggleBookmark(bookmark)
                                 }
-                            }
-                        }
-                    }
-
-                    if (limitedArticles.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("No news available")
-                        }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(bottom = 16.dp)
-                        ) {
-                            items(limitedArticles) { article ->
-                                ArticleItem(
-                                    title = article.title ?: "No Title",
-                                    description = article.description ?: "No Description",
-                                    imageUrl = article.urlToImage,
-                                    onBookmarkClick = {
-                                        val brief = article.description
-                                            ?.take(150)
-                                            ?.plus("...")
-                                            ?: "No description available"
-
-                                        val bookmark = BookmarkEntity(
-                                            title = article.title,
-                                            description = brief,
-                                            url = article.url,
-                                            urlToImage = article.urlToImage,
-                                            publishedAt = article.publishedAt
-                                        )
-                                        bookmarksViewModel.toggleBookmark(bookmark)
-                                    }
-                                )
-                            }
+                            )
                         }
                     }
                 }
@@ -152,11 +150,10 @@ fun ArticleItem(
 ) {
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(6.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+            .fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(6.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
 
             if (!imageUrl.isNullOrBlank()) {
                 val context = LocalContext.current
@@ -172,19 +169,24 @@ fun ArticleItem(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(180.dp)
+                        .clip(MaterialTheme.shapes.medium)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            Text(text = title, style = MaterialTheme.typography.titleMedium, maxLines = 3)
-            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 3,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
 
-            val briefDescription = description
-                .take(150)
-                .plus("...")
-
-            Text(text = briefDescription, style = MaterialTheme.typography.bodyMedium)
-            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = description.take(150).plus("..."),
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 3,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
 
             var clicked by remember { mutableStateOf(false) }
             val scale by animateFloatAsState(targetValue = if (clicked) 1.12f else 1f)
@@ -198,8 +200,10 @@ fun ArticleItem(
                     onBookmarkClick()
                     clicked = true
                 },
-                modifier = Modifier.scale(scale),
-                colors = ButtonDefaults.buttonColors(containerColor = buttonColor)
+                modifier = Modifier
+                    .scale(scale),
+                colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+                shape = MaterialTheme.shapes.small
             ) {
                 Text("Bookmark")
             }
@@ -210,6 +214,78 @@ fun ArticleItem(
                     clicked = false
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ShimmerArticleList() {
+    val infiniteTransition = rememberInfiniteTransition()
+    val shimmerAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.7f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+    LazyColumn(
+        contentPadding = PaddingValues(8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        items(5) {
+            ShimmerArticleItem(alpha = shimmerAlpha)
+        }
+    }
+}
+
+@Composable
+fun ShimmerArticleItem(alpha: Float) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(6.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.surface.copy(alpha = alpha),
+                                MaterialTheme.colorScheme.surface.copy(alpha = alpha / 3)
+                            )
+                        )
+                    )
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth(0.7f)
+                    .height(20.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(
+                        MaterialTheme.colorScheme.surface.copy(alpha = alpha)
+                    )
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(14.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = alpha))
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(
+                modifier = Modifier
+                    .width(110.dp)
+                    .height(36.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = alpha))
+            )
         }
     }
 }
