@@ -34,9 +34,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _isLoading = mutableStateOf(false)
     val isLoading: State<Boolean> = _isLoading
 
+    // Search articles state
+    private val _searchArticles = mutableStateOf<List<Article>>(emptyList())
+    val searchArticles: State<List<Article>> = _searchArticles
+
     // Keys (don't hardcode in prod)
     private val worldApiKey = "3e2571c757af4c11b399c4db29198a42" // NewsAPI.org key
     private val indiaApiKey = "5433a783cb9149b59768f5bc91ce53e6" // WorldNewsAPI key
+
+    // NewsDataHub API key
+    private val newsDataHubApiKey = "5DqGTdEhiD-p45OhsGYaZJ0n2HucaPFQjx4wIhXKrLQ"
 
     init {
         // load world (default) and india in parallel
@@ -90,7 +97,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * Fetch sports headlines using NewsAPI 'everything' search (q = "sports").
-     * If you prefer category-based top-headlines for a country, change the call accordingly.
      */
     fun fetchSports(query: String = "sports", pageSize: Int = 10) {
         viewModelScope.launch {
@@ -116,6 +122,32 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /**
+     * Search news via NewsDataHub API with given query keyword.
+     */
+    fun searchNews(query: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val resp = withContext(Dispatchers.IO) {
+                    repository.searchNewsDataHub(query = query, apiKey = newsDataHubApiKey)
+                }
+                _searchArticles.value = resp.filter { !it.urlToImage.isNullOrBlank() }.take(MAX_ARTICLES)
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Search fetch error: ${e.message}", e)
+                _searchArticles.value = emptyList()
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    /**
+     * Clear search articles list.
+     */
+    fun clearSearch() {
+        _searchArticles.value = emptyList()
+    }
 
     // ---------- Helper mapper ----------
     private fun safeIndiaArticleToArticle(it: IndiaArticle): Article? {

@@ -4,7 +4,9 @@ import android.content.Context
 import androidx.room.Room
 import com.monish.insight.data.local.AppDatabase
 import com.monish.insight.data.local.BookmarkEntity
+import com.monish.insight.data.model.Article
 import com.monish.insight.data.remote.IndiaRetrofitInstance
+import com.monish.insight.data.remote.NewsDataHubRetrofitInstance
 import kotlinx.coroutines.flow.Flow
 
 class NewsRepository(context: Context) {
@@ -42,6 +44,26 @@ class NewsRepository(context: Context) {
 
 
 
+    suspend fun searchNewsDataHub(query: String, apiKey: String): List<Article> {
+        val response = NewsDataHubRetrofitInstance.api.getTopNews(
+            q = query,
+            hours = 72,
+            require_media = true,
+            language = "en",
+            per_page = 20,
+            apiKey = apiKey
+        )
+        // Map NewsDataHub API response to your Article model
+        return response.data.map {
+            Article(
+                title = it.title,
+                description = it.description,
+                url = it.article_link,
+                urlToImage = it.media_url,
+                publishedAt = it.pub_date
+            )
+        }
+    }
 
 
 
