@@ -38,66 +38,51 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _searchArticles = mutableStateOf<List<Article>>(emptyList())
     val searchArticles: State<List<Article>> = _searchArticles
 
-    // Keys (don't hardcode in prod)
-    private val worldApiKey = "3e2571c757af4c11b399c4db29198a42" // NewsAPI.org key
-    private val indiaApiKey = "5433a783cb9149b59768f5bc91ce53e6" // WorldNewsAPI key
-
-    // NewsDataHub API key
+    // API keys (do not hardcode in production)
+    private val worldApiKey = "3e2571c757af4c11b399c4db29198a42"
+    private val indiaApiKey = "5433a783cb9149b59768f5bc91ce53e6"
     private val newsDataHubApiKey = "5DqGTdEhiD-p45OhsGYaZJ0n2HucaPFQjx4wIhXKrLQ"
 
     init {
-        // load world (default) and india in parallel
         refreshAllNews()
         fetchSports()
     }
 
     fun refreshAllNews() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
             try {
-                // parallel fetch: world + india (don't block on sports)
-                val worldDeferred = async(Dispatchers.IO) {
-                    try {
-                        val worldResp = repository.getTopHeadlines(worldApiKey)
-                        (worldResp.articles ?: emptyList())
-                            .filter { !it.urlToImage.isNullOrBlank() }
-                            .take(MAX_ARTICLES)
-                    } catch (e: Exception) {
-                        Log.e("HomeViewModel", "World fetch error: ${e.message}", e)
-                        emptyList()
-                    }
+                val worldDeferred = async {
+                    repository.getTopHeadlines(worldApiKey)?.articles
+                        ?.filter { !it.urlToImage.isNullOrBlank() }
+                        ?.take(MAX_ARTICLES) ?: emptyList()
                 }
 
-                val indiaDeferred = async(Dispatchers.IO) {
-                    try {
-                        val indiaResp = repository.getIndiaTopHeadlines(indiaApiKey)
-                        indiaResp?.top_news
-                            ?.flatMap { it.news ?: emptyList() }
-                            ?.mapNotNull { safeIndiaArticleToArticle(it) }
-                            ?.take(MAX_ARTICLES)
-                            ?: emptyList()
-                    } catch (e: Exception) {
-                        Log.e("HomeViewModel", "India fetch error: ${e.message}", e)
-                        emptyList()
-                    }
+                val indiaDeferred = async {
+                    repository.getIndiaTopHeadlines(indiaApiKey)?.top_news
+                        ?.flatMap { it.news ?: emptyList() }
+                        ?.mapNotNull { safeIndiaArticleToArticle(it) }
+                        ?.filter { !it.urlToImage.isNullOrBlank() }
+                        ?.take(MAX_ARTICLES) ?: emptyList()
                 }
 
-                _worldArticles.value = worldDeferred.await()
-                _indiaArticles.value = indiaDeferred.await()
+                val worldArticlesResult = worldDeferred.await()
+                val indiaArticlesResult = indiaDeferred.await()
 
-                Log.d("HomeViewModel", "Loaded World: ${_worldArticles.value.size}, India: ${_indiaArticles.value.size}")
-
+                withContext(Dispatchers.Main) {
+                    _worldArticles.value = worldArticlesResult
+                    _indiaArticles.value = indiaArticlesResult
+                    _isLoading.value = false
+                }
             } catch (e: Exception) {
-                Log.e("HomeViewModel", "Unexpected refresh error: ${e.message}", e)
-            } finally {
-                _isLoading.value = false
+                Log.e("HomeViewModel", "refreshAllNews error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    _isLoading.value = false
+                }
             }
         }
     }
 
-    /**
-     * Fetch sports headlines using NewsAPI 'everything' search (q = "sports").
-     */
     fun fetchSports(query: String = "sports", pageSize: Int = 10) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -112,7 +97,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     ?: emptyList()
 
                 _sportsArticles.value = articles
-                Log.d("HomeViewModel", "Sports loaded: ${articles.size}")
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Sports fetch error: ${e.message}", e)
                 _sportsArticles.value = emptyList()
@@ -122,9 +106,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /**
-     * Search news via NewsDataHub API with given query keyword.
-     */
     fun searchNews(query: String) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -142,14 +123,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /**
-     * Clear search articles list.
-     */
     fun clearSearch() {
         _searchArticles.value = emptyList()
     }
 
-    // ---------- Helper mapper ----------
     private fun safeIndiaArticleToArticle(it: IndiaArticle): Article? {
         val title = it.title ?: it.text ?: return null
         return Article(

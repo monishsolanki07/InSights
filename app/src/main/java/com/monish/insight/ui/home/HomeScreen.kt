@@ -30,18 +30,11 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.draw.scale
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.ui.text.input.ImeAction
-
-import androidx.compose.material3.IconButton
-import androidx.compose.material.icons.filled.Search
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,9 +77,8 @@ fun HomeScreen(
                                     }) {
                                         Icon(
                                             imageVector = Icons.Filled.Close,
-                                            contentDescription = "Close Search"
+                                            contentDescription = "Clear Search"
                                         )
-
                                     }
                                 }
                             },
@@ -114,7 +106,6 @@ fun HomeScreen(
                                 imageVector = Icons.Filled.Search,
                                 contentDescription = "Search Icon"
                             )
-
                         }
                     } else {
                         IconButton(onClick = {
@@ -138,7 +129,6 @@ fun HomeScreen(
                 .padding(paddingValues)
         ) {
             if (isSearching) {
-                // Show search results
                 if (isLoading) {
                     ShimmerArticleList()
                 } else {
@@ -157,17 +147,15 @@ fun HomeScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             contentPadding = PaddingValues(bottom = 16.dp)
                         ) {
-                            items(searchArticles) { article ->
+                            // Filtered to show only articles with images
+                            val filteredArticles = searchArticles.filter { !it.urlToImage.isNullOrBlank() }
+                            items(filteredArticles) { article ->
                                 ArticleItem(
                                     title = article.title ?: "No Title",
                                     description = article.description ?: "No Description",
                                     imageUrl = article.urlToImage,
                                     onBookmarkClick = {
-                                        val brief = article.description
-                                            ?.take(150)
-                                            ?.plus("...")
-                                            ?: "No description available"
-
+                                        val brief = article.description?.take(150)?.plus("...") ?: "No description available"
                                         val bookmark = BookmarkEntity(
                                             title = article.title,
                                             description = brief,
@@ -183,7 +171,6 @@ fun HomeScreen(
                     }
                 }
             } else {
-                // Show existing tabbed news
                 TabRow(selectedTabIndex = selectedTab) {
                     tabs.forEachIndexed { index, title ->
                         Tab(
@@ -201,7 +188,9 @@ fun HomeScreen(
                     1 -> worldArticles
                     2 -> sportsArticles
                     else -> worldArticles
-                }.take(10)
+                }
+                    .filter { !it.urlToImage.isNullOrBlank() }
+                    .take(10)
 
                 val context = LocalContext.current
                 LaunchedEffect(articlesToShow) {
@@ -243,11 +232,7 @@ fun HomeScreen(
                                     description = article.description ?: "No Description",
                                     imageUrl = article.urlToImage,
                                     onBookmarkClick = {
-                                        val brief = article.description
-                                            ?.take(150)
-                                            ?.plus("...")
-                                            ?: "No description available"
-
+                                        val brief = article.description?.take(150)?.plus("...") ?: "No description available"
                                         val bookmark = BookmarkEntity(
                                             title = article.title,
                                             description = brief,
@@ -267,7 +252,6 @@ fun HomeScreen(
     }
 }
 
-
 @Composable
 fun ArticleItem(
     title: String,
@@ -275,71 +259,81 @@ fun ArticleItem(
     imageUrl: String?,
     onBookmarkClick: () -> Unit
 ) {
+    var imageLoadSucceeded by remember { mutableStateOf(false) }
+
+    if (imageUrl.isNullOrBlank()) return
+
     Card(
-        modifier = Modifier
-            .fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(6.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(Modifier.padding(16.dp)) {
 
-            if (!imageUrl.isNullOrBlank()) {
-                val context = LocalContext.current
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(imageUrl)
-                        .crossfade(true)
-                        .size(800)
-                        .build(),
-                    contentDescription = title,
-                    placeholder = painterResource(id = R.drawable.ic_placeholder),
-                    error = painterResource(id = R.drawable.ic_placeholder),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp)
-                        .clip(MaterialTheme.shapes.medium)
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                maxLines = 3,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            Text(
-                text = description.take(150).plus("..."),
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 3,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            var clicked by remember { mutableStateOf(false) }
-            val scale by animateFloatAsState(targetValue = if (clicked) 1.12f else 1f)
-            val buttonColor by animateColorAsState(
-                targetValue = if (clicked) MaterialTheme.colorScheme.secondaryContainer
-                else MaterialTheme.colorScheme.primaryContainer
-            )
-
-            Button(
-                onClick = {
-                    onBookmarkClick()
-                    clicked = true
-                },
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(imageUrl)
+                    .crossfade(true)
+                    .size(800)
+                    .build(),
+                contentDescription = title,
+                placeholder = painterResource(id = R.drawable.ic_placeholder),
+                error = painterResource(id = R.drawable.ic_placeholder),
                 modifier = Modifier
-                    .scale(scale),
-                colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
-                shape = MaterialTheme.shapes.small
-            ) {
-                Text("Bookmark")
-            }
-
-            LaunchedEffect(clicked) {
-                if (clicked) {
-                    kotlinx.coroutines.delay(300)
-                    clicked = false
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .clip(MaterialTheme.shapes.medium),
+                onSuccess = {
+                    imageLoadSucceeded = true
+                },
+                onError = {
+                    imageLoadSucceeded = false
                 }
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (imageLoadSucceeded) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    maxLines = 3,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Text(
+                    text = description.take(150).plus("..."),
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 3,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                var clicked by remember { mutableStateOf(false) }
+                val scale by animateFloatAsState(targetValue = if (clicked) 1.12f else 1f)
+                val buttonColor by animateColorAsState(
+                    targetValue = if (clicked) MaterialTheme.colorScheme.secondaryContainer
+                    else MaterialTheme.colorScheme.primaryContainer
+                )
+
+                Button(
+                    onClick = {
+                        onBookmarkClick()
+                        clicked = true
+                    },
+                    modifier = Modifier.scale(scale),
+                    colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text("Bookmark")
+                }
+
+                LaunchedEffect(clicked) {
+                    if (clicked) {
+                        kotlinx.coroutines.delay(300)
+                        clicked = false
+                    }
+                }
+            } else {
+                // If image load fails, show nothing or a placeholder box of minimal height to keep layout consistent
+                Spacer(modifier = Modifier.height(0.dp))
             }
         }
     }
@@ -352,10 +346,11 @@ fun ShimmerArticleList() {
         initialValue = 0.3f,
         targetValue = 0.7f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1000, easing = LinearEasing),
+            animation = tween(1000, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         )
     )
+
     LazyColumn(
         contentPadding = PaddingValues(8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -366,14 +361,13 @@ fun ShimmerArticleList() {
     }
 }
 
-
 @Composable
 fun ShimmerArticleItem(alpha: Float) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(6.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(Modifier.padding(16.dp)) {
             Spacer(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -381,7 +375,7 @@ fun ShimmerArticleItem(alpha: Float) {
                     .clip(MaterialTheme.shapes.medium)
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(
+                            listOf(
                                 MaterialTheme.colorScheme.surface.copy(alpha = alpha),
                                 MaterialTheme.colorScheme.surface.copy(alpha = alpha / 3)
                             )
@@ -394,9 +388,7 @@ fun ShimmerArticleItem(alpha: Float) {
                     .fillMaxWidth(0.7f)
                     .height(20.dp)
                     .clip(MaterialTheme.shapes.small)
-                    .background(
-                        MaterialTheme.colorScheme.surface.copy(alpha = alpha)
-                    )
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = alpha))
             )
             Spacer(modifier = Modifier.height(8.dp))
             Spacer(
