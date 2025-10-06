@@ -18,7 +18,6 @@ Modern Android news app delivering curated news articles in a visually engaging 
     - `remote/` — API networking using Retrofit and serialization  
     - `repository/` — Data repositories handling caching and fetching  
     - `local/` — DataStore and local database entities  
-  - `di/` — Hilt dependency injection modules  
   - `util/` — Utility classes and helpers (e.g., TTS helpers, extensions)
 
 ---
