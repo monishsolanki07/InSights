@@ -13,7 +13,7 @@ class NewsDataRepository(
     private var nextPageToken: String? = null
 
     suspend fun fetchPage(
-        size: Int = 10,
+        size: Int = 20,
         country: String? = "au,us",
         language: String? = "en",
         pageToken: String? = null
