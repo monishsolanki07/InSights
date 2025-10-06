@@ -141,12 +141,6 @@ cd insight-news-reels/app
 
 ---
 
-## License
-
-MIT License — see [LICENSE](LICENSE) file for details.
-
----
-
 ## Contact
 
 Created and maintained by Monish. For contributions or questions, open an issue or pull request on the repository.
