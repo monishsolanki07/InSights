@@ -1,126 +1,154 @@
 # Insight News Reels App
 
-Insight is a modern Android news application delivering a visually engaging “Reels” style vertical news feed. It combines efficient network pagination, offline caching, bookmarking, keyword search, and an innovative **anchor speaking article** feature via Text-to-Speech (TTS) for an immersive audio-visual experience.
+Modern Android news app delivering curated news articles in a visually engaging “Reels” style vertical feed. Features include offline caching, efficient pagination, bookmarking, keyword search, and anchor speaking articles with Text-to-Speech (TTS).
 
 ---
 
-## Key Features
+## Monorepo / Modular Structure
 
-- **Reels-Style Vertical Feed:**  
-  Swipe seamlessly through news articles displayed with large images and concise summaries, optimized for quick browsing.
-
-- **Offline Caching with DataStore:**  
-  Articles are cached locally with automatic expiry, ensuring quick load times and offline access.
-
-- **Efficient Pagination with Paging 3:**  
-  Infinite scrolling with optimized network requests.
-
-- **Keyword Search on Home Screen:**  
-  Search for news by keywords, fetching related articles in real-time.
-
-- **Bookmarking:**  
-  Save favorite articles for easy retrieval later.
-
-- **Image Optimization with Coil:**  
-  Prefetch images for smooth, lag-free scrolling experience.
-
-- **Article Details with Bottom Sheet:**  
-  Tap “Read More” to view full content, source links, and images.
-
-- **Anchor Speaking Article (TTS):**  
-  Tap "Speak" button on an article to listen to the content utilizing Android's Text-to-Speech engine, providing hands-free news consumption.
-
-- **Robust Error & Loading States:**  
-  Displays appropriate UI prompts during network fetches, errors, or when no articles are available.
+- `app/` — Android app codebase  
+  - `ui/`  
+    - `reels/` — News reels UI components and `ReelsViewModel`  
+    - `bookmarks/` — Bookmark screen and ViewModel  
+    - `search/` — Home screen search UI and ViewModel  
+    - `speech/` — TTS UI controls and helper classes  
+    - `common/` — Shared UI components (loading, error states)  
+  - `data/`  
+    - `model/` — Data classes e.g. `NewArticle.kt`  
+    - `remote/` — API networking using Retrofit and serialization  
+    - `repository/` — Data repositories handling caching and fetching  
+    - `local/` — DataStore and local database entities  
+  - `di/` — Hilt dependency injection modules  
+  - `util/` — Utility classes and helpers (e.g., TTS helpers, extensions)
 
 ---
 
-## Architecture & Technologies
+## Default Ports and Config
 
-- **Jetpack Compose:** Modern, declarative UI toolkit.
-- **MVVM Pattern:** Clear separation of UI logic and data handling.
-- **Paging 3:** For scalable, efficient pagination.
-- **DataStore:** Local caching for offline support.
-- **Retrofit & Kotlin Serialization:** Network API calls and JSON parsing.
-- **Coil:** Image loading and prefetching.
-- **Hilt:** Dependency injection framework.
-- **Kotlin Coroutines & Flow:** For asynchronous data streams.
-- **Android Text-to-Speech (TTS):** For reading articles aloud.
+- **News API Backend** — Configured in repository and network layer, typically using public or custom API URL.
+- **Local Data Storage** — Android DataStore (no ports; local).
+  
+---
+
+## Quick Start (Development)
+
+1. Clone the repo:
+
+git clone https://github.com/monishsolanki07/InSights.git
+cd insight-news-reels/app
+
+
+2. Configure your News API key in the repository or application `build.gradle` or secure config file as described.
+
+3. Open the project in Android Studio Arctic Fox or newer.
+
+4. Run the app on an emulator or device.
 
 ---
 
-## Project Structure
+## Features Overview
 
-com.monish.insight
-├─ data
-│ ├─ model # Data classes: Article, API responses
-│ ├─ remote # Retrofit API setup
-│ ├─ repository # Data repositories for fetching and caching
-│ └─ local # DataStore setup and local entities
-├─ ui
-│ ├─ reels # Reels UI & ViewModel
-│ ├─ bookmarks # Bookmarks screen & ViewModel
-│ ├─ search # Search UI components
-│ ├─ speech # TTS implementation and toggle UI
-│ └─ common # Shared components (loaders, errors)
-├─ di # Dependency Injection modules (Hilt)
-└─ util # Helpers, extensions, and TTS utilities
+- **Reels-Style News Feed**  
+  Swipe vertically through cards with large images, titles, and summaries.
 
+- **Offline Cache with DataStore**  
+  Articles cached locally for fast load & offline availability.
 
----
+- **Paging 3 Pagination**  
+  Efficient API paging for infinite scrolling.
 
-## Getting Started
+- **Keyword Search on Home Screen**  
+  Input keyword to fetch related news on demand.
 
-1. **Clone the Repository:**
+- **Bookmarks**  
+  Save and manage favorite articles.
 
-  git clone https://github.com/monishsolanki07/InSights.git
+- **Anchor Speaking Articles (TTS)**  
+  Listen to article content via integrated Android Text-to-Speech for accessible, hands-free news consumption.
 
+- **Smooth Image Loading and Prefetching**  
+  Coil handles image caching and preloading ahead of user scroll.
 
-2. **Open in Android Studio:**  
-   Use Android Studio Arctic Fox or newer.
+- **Detailed Article View with Bottom Sheet**  
+  Full article content and source link accessible in modal sheet.
 
-3. **Configure API Key:**  
-   Insert your News API key as instructed in the project setup.
-
-4. **Build & Run:**  
-   Deploy on a device or emulator.
-
-5. **Explore Features:**
-   - Scroll through engaging news reels
-   - Use the search bar on the home screen for keyword-based news retrieval
-   - Bookmark articles
-   - Tap "Speak" to listen to the article aloud
+- **Robust Error and Loading State Handling**  
+  User-friendly UI for network/loading issues with retry options.
 
 ---
 
-## Developer Notes
+## Environment Variables / Configuration
 
-- Efficiently manages pagination with Paging 3.
-- Balances caching with DataStore for quick offline access.
-- TTS enhances accessibility; utilize pause, resume, and stop controls.
-- Modular architecture simplifies maintenance and future features.
-- Error handling and UI states improve user experience.
+- `NewsApiKey` — Your API key for the news service, set in your secure config or Gradle properties.
+- `CacheExpiration` — Configurable cache expiry time in milliseconds.
+- `PagingPageSize` — Number of articles fetched per API call (default 10).
+- `SupportedCountries` — Country codes filter for news (e.g. `us,au`).
+- `Languages` — Supported article languages (e.g. `en`).
+
+---
+
+## Services and Components
+
+| Module/Package                 | Responsibility                           |
+|-------------------------------|------------------------------------------|
+| `data.model`                  | Data classes/models like `NewArticle`  |
+| `data.remote`                 | Retrofit API interfaces and network calls  |
+| `data.repository`             | Data fetching, caching, and repository pattern |
+| `data.local`                  | DataStore caching and local entities    |
+| `ui.reels`                   | News reels UI and ViewModel              |
+| `ui.bookmarks`               | Bookmark UI and ViewModel                 |
+| `ui.search`                  | Search screen UI and ViewModel            |
+| `ui.speech`                  | Text-to-Speech UI components and logic    |
+| `ui.common`                  | Shared loading spinners, error messages  |
+| `di`                        | Hilt modules for Dependency Injection     |
+| `util`                      | Helpers (extensions, TTS handler)         |
+
+---
+
+## Development Notes
+
+- Uses **Paging 3** for scalable infinite scroll and load states integration.
+- **DataStore** caches articles locally, minimizing network loads.
+- The **search UI** allows keyword-based fetching of news in real-time.
+- Text-to-Speech integration provides an **anchor speaking article** feature accessible via UI controls in each article card.
+- Efficient **image prefetching** balances performance and memory usage.
+- Strict **unidirectional data flow** ensures robust, maintainable state management.
+- Error states and loading indicators provide immediate user feedback.
+- Modular architecture with **Hilt** for DI improves testability and separation of concerns.
+
+---
+
+## Running the App
+
+- Open Android Studio.
+- Ensure API key is configured.
+- Run on emulator or physical device.
+- Use the home screen search bar to fetch news by keyword.
+- Swipe vertically to browse reels.
+- Tap bookmark icon to save articles.
+- Tap “Speak” button on any article to listen to the content.
+- Tap “Read More” for full article details in a bottom sheet.
 
 ---
 
 ## Future Enhancements
 
-- User profile and personalized feeds
-- Dark mode and accessibility improvements
-- Search suggestions, filters
-- Sync bookmarks across devices
-- Analytics and user engagement tracking
+- User authentication and personalized feeds.
+- Real-time collaborative annotations.
+- Dark mode and accessibility improvements.
+- Enhanced search with filters and autocomplete.
+- Cross-device bookmark syncing with cloud backup.
+- Analytics and usage tracking.
 
 ---
 
 ## License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+MIT License — see [LICENSE](LICENSE) file for details.
 
 ---
 
 ## Contact
 
-Created by Monish.  
-For questions or contributions, please submit an issue or pull request.
+Created and maintained by Monish. For contributions or questions, open an issue or pull request on the repository.
 
